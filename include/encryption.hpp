@@ -13,9 +13,13 @@
 
 unsigned log_b(big_int n);
 
-big_int text_to_numeric(const std::string &message);
+big_int text_to_numeric(const std::string &str);
 
-std::string numeric_to_text(big_int value);
+std::string numeric_to_text(big_int num);
+
+std::string hash_numeric(big_int num);
+
+big_int unhash_text(const std::string &str);
 
 /*
  * Data manipulation algorithm.

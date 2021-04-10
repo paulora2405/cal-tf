@@ -9,102 +9,93 @@ unsigned log_b(big_int n) {
   return b;
 }
 
-/*
- * Data manipulation algorithm.
- */
-void data_manipulation(std::string src_path, std::string dst_path, Key key) {
-  using namespace boost::multiprecision;
+big_int text_to_numeric(const std::string &str) {
+  big_int num{0};
+  unsigned e{0};
+  for(char c : str) {
+    num += c * (big_int(1)) << (e++ * 8);
+  }
+  return num;
+}
 
-  // READ FROM ORIGINAL FILE
-  std::ifstream src(src_path, std::ios::binary);
+std::string numeric_to_text(big_int num) {
+  std::string str;
+  while(num) {
+    str += (char)(num & 255);
+    num >>= 8;
+  }
+  return str;
+}
+
+std::string hash_numeric(big_int num) {
+  std::string str;
+  while(num) {
+    str += '0' + (char)(num & 31);
+    num >>= 5;
+  }
+  return str;
+}
+
+big_int unhash_text(const std::string &str) {
+  big_int num{0};
+  unsigned e{0};
+  for(auto c : str) {
+    num += (c - '0') * (big_int(1)) << (e++ * 5);
+  }
+  return num;
+}
+
+void encrypt_file(std::string src_path, std::string dst_path, Key pub_key) {
+  std::ifstream src(src_path);
   if(!src.is_open()) {
     std::cerr << "Arquivo não pode ser aberto com sucesso" << std::endl;
     exit(EXIT_FAILURE);
   }
-
-  const unsigned BLOCK_SIZE = log_b(key.n) - 1;
-  big_int buffer;
-  std::vector<big_int> input;
-
-  /*
-  40 / 32 = 1
-  len_file / sizeof(uint128_t)
-  40 % 32 = 8
-  len_file % sizeof(uint128_t)
-  */
-  src.seekg(0, src.end);
-  size_t custom_size = BLOCK_SIZE;
-  size_t len_file = src.tellg();
-  size_t int_len = len_file / custom_size;
-  size_t rem_len = len_file % custom_size;
-  src.seekg(0, src.beg);
-
-  // std::cout << "Len_file (bytes): " << len_file << std::endl;
-  // std::cout << "Int_len (blocks): " << int_len << std::endl;
-  // std::cout << "Rem_len (bytes): " << rem_len << std::endl;
-
-  for(size_t i = 0; i < int_len; i++) {
-    src.read(reinterpret_cast<char *>(&buffer), custom_size);
-    input.push_back(buffer);
-  }
-  if(rem_len != 0) {
-    src.read(reinterpret_cast<char *>(&buffer), rem_len);
-    input.push_back(buffer);
-  }
-  src.close();
-
-  // DATA MANIPULATION HERE
-  std::vector<big_int> output(input.size(), 0);
-
-  for(size_t i = 0; i < input.size(); i++) {
-    output[i] = mod_pow(input[i], key.d_e, key.n);
-  }
-
-  // TESTS
-  // for(auto i : input) {
-  //   std::cout << i << std::endl;
-  //   std::cout << reinterpret_cast<const char *>(&i) << std::endl;
-  // }
-  // for(auto i : output) {
-  //   std::cout << i << std::endl;
-  //   std::cout << reinterpret_cast<const char *>(&i) << std::endl;
-  // }
-
-  // WRITE TO MANIPULATED FILE
-  std::ofstream dst(dst_path, std::ios::binary);
+  std::ofstream dst(dst_path);
   if(!dst.is_open()) {
     std::cerr << "Arquivo não pode ser aberto com sucesso" << std::endl;
     exit(EXIT_FAILURE);
   }
 
-  for(size_t i = 0; i < int_len; i++) {
-    buffer = output[i];
-    dst.write(reinterpret_cast<const char *>(&buffer), custom_size);
-  }
-  if(rem_len != 0) {
-    buffer = output.back();
-    int n = 0;
-    do {
-      buffer >>= 8;
-      n++;
-    } while(buffer != 0);
-    buffer = output.back();
-    dst.write(reinterpret_cast<const char *>(&buffer), n);
-  }
+  const unsigned BLOCK_SIZE = (log_b(pub_key.n) / 8) - 1;
+  unsigned bytes_read;
+  big_int m;
+  char *buffer = new char[BLOCK_SIZE];
 
-  dst.close();
+  while((bytes_read = src.readsome(buffer, BLOCK_SIZE)) == BLOCK_SIZE) {
+    m = text_to_numeric(buffer);
+    m = mod_pow(m, pub_key.d_e, pub_key.n);
+    dst << hash_numeric(m) << std::endl;
+  }
+  if(bytes_read) {
+    char *last_buffer = new char[bytes_read];
+    std::strncpy(last_buffer, buffer, bytes_read);
+    m = text_to_numeric(last_buffer);
+    m = mod_pow(m, pub_key.d_e, pub_key.n);
+    dst << hash_numeric(m) << std::endl;
+    delete[] last_buffer;
+  }
+  delete[] buffer;
 }
 
-/*
- * Encrypts a source file to a destination file.
- */
-void encrypt_file(std::string src_path, std::string dst_path, Key pub_key) {
-  data_manipulation(src_path, dst_path, pub_key);
-}
-
-/*
- * Decrypts a source file to a destination file.
- */
 void decrypt_file(std::string src_path, std::string dst_path, Key priv_key) {
-  data_manipulation(src_path, dst_path, priv_key);
+  std::ifstream src(src_path);
+  if(!src.is_open()) {
+    std::cerr << "Arquivo não pode ser aberto com sucesso" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  std::ofstream dst(dst_path);
+  if(!dst.is_open()) {
+    std::cerr << "Arquivo não pode ser aberto com sucesso" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  std::string v;
+  big_int m;
+
+  while(src >> v) {
+    m = unhash_text(v);
+    m = mod_pow(m, priv_key.d_e, priv_key.n);
+    dst << numeric_to_text(m);
+  }
 }
