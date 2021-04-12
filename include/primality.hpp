@@ -16,7 +16,8 @@
 class Prime_generator {
 private:
   big_int prime;
-  boost::random::mt19937 mt19937_gen128;
+  big_int odd;
+  boost::random::mt19937 mt19937_gen;
 
 public:
   Prime_generator() {}
@@ -30,6 +31,8 @@ public:
    * Gera um número primo aleatório no intervalo.
    */
   big_int random_prime(unsigned max_bits);
+
+  big_int random_odd(unsigned max_bits);
 };
 
 #endif

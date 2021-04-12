@@ -1,7 +1,7 @@
 #include "../include/key_generator.hpp"
 
-Key_pair initialize_128(unsigned max_bits, bool print) {
-  if(max_bits > 256) {
+Key_pair generate_keys(unsigned max_bits, bool print) {
+  if(max_bits > 512) {
     throw std::runtime_error("Tamanho de chave não suportada\n");
   }
   big_int p, q, n, totn, e, d, tmp;
@@ -9,7 +9,7 @@ Key_pair initialize_128(unsigned max_bits, bool print) {
 
   // Passo 1: Selecionar dois numeros primos aleatorios grandes p e q
   // Passo 2: Calcular n = p * q
-  // Passo 3
+  // Passo 3: Calcular ø(n) = (p-1) * (q-1)
   // Passo 4: Achar um e tal que gcd(e, ø(n)) = 1 ; 1 < e < ø(n)
   // Passo 5: Calcular d tal que e*d = 1 (mod ø(n))
 
@@ -21,8 +21,11 @@ Key_pair initialize_128(unsigned max_bits, bool print) {
     totn = (p - 1) * (q - 1);
 
     do {
+      // e = gen.random_odd(max_bits);
       e = gen.random_prime(max_bits);
+      // ou simplesmente um primo < totn
     } while(e >= totn);
+    // } while(gcd_iter(e, totn) != 1);
 
     euclides_extended(e, totn, d, tmp);
     d = (d % totn + totn) % totn;

@@ -1,7 +1,7 @@
 #include "../include/primality.hpp"
 
 Prime_generator::Prime_generator(unsigned seed) {
-  mt19937_gen128.seed(seed);
+  mt19937_gen.seed(seed);
 }
 
 bool Prime_generator::is_composite(big_int n, int a, big_int d, big_int s) {
@@ -14,7 +14,7 @@ bool Prime_generator::is_composite(big_int n, int a, big_int d, big_int s) {
   return true;
 }
 
-bool Prime_generator::miller_rabin(big_int n) {
+bool Prime_generator::miller_rabin(big_int n) {  // O(k log2 n)
   if(n < 2) return false;
   big_int r = 0;
   big_int d = n - 1;
@@ -31,16 +31,27 @@ big_int Prime_generator::random_prime(unsigned max_bits) {
 
   boost::random::uniform_int_distribution<boost::multiprecision::cpp_int> dist(2, max_num);
 
-  this->prime = (big_int)dist(mt19937_gen128);
+  this->prime = (big_int)dist(mt19937_gen);
 
   this->prime += !(this->prime & 1);
 
   while(!miller_rabin(this->prime)) {
     this->prime += 2;
     if(this->prime > max_num) {
-      this->prime = (big_int)dist(mt19937_gen128);
+      this->prime = (big_int)dist(mt19937_gen);
       this->prime += !(this->prime & 1);
     }
   }
   return this->prime;
+}
+
+big_int Prime_generator::random_odd(unsigned max_bits) {
+  big_int max_num = (big_int(1)) << max_bits;
+
+  boost::random::uniform_int_distribution<boost::multiprecision::cpp_int> dist(3, max_num);
+
+  this->odd = (big_int)dist(mt19937_gen);
+  this->odd -= !(this->odd & 1);
+
+  return this->odd;
 }

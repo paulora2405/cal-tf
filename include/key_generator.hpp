@@ -25,6 +25,6 @@ typedef struct key_pair {
  * Gera os valores de p, q, n, Phi(n), e, d.
  * @returns Um par de chaves, contendo uma chave pública e uma chave privada.
  */
-Key_pair initialize_128(unsigned max_bits, bool print = false);
+Key_pair generate_keys(unsigned max_bits, bool print = false);
 
 #endif
