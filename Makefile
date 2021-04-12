@@ -6,7 +6,7 @@ OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/apps
 TARGET   := main
 INCLUDE  := -Iinclude/
-SRC      :=                      \
+SRC      :=                     \
 	$(wildcard src/module1/*.cpp) \
 	$(wildcard src/module2/*.cpp) \
 	$(wildcard src/*.cpp)         \
@@ -15,7 +15,15 @@ OBJECTS  := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 DEPENDENCIES  \
          := $(OBJECTS:.o=.d)
 
+ARCHIVE  := cal-tf-test
+SUBMISSIONS := 									\
+	src/ include/	graficos/				\
+	LICENSE README.md Makefile 		\
+	ComplexidadeTrabalho.pdf			\
+	original.txt
+
 all: build $(APP_DIR)/$(TARGET)
+	@ln -s $(APP_DIR)/$(TARGET) $(TARGET)
 
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
@@ -42,6 +50,16 @@ release: all
 clean:
 	-@rm -rvf $(OBJ_DIR)/*
 	-@rm -rvf $(APP_DIR)/*
+	-@rm -vf $(TARGET)
+
+archive:
+	@rm -rf $(ARCHIVE)
+	@mkdir $(ARCHIVE)
+	@cp -r $(SUBMISSIONS) $(ARCHIVE)
+	@zip -rq $(ARCHIVE).zip $(ARCHIVE)
+	-@rm -rf $(ARCHIVE)
+	@echo "Zipped the project to $(ARCHIVE).zip"
+
 
 info:
 	@echo "[*] Application dir: ${APP_DIR}     "
