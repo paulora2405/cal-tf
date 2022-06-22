@@ -1,5 +1,5 @@
-# RSA Implementation - Trabalho de Complexidade de Algoritmos 2020-2
-*Paulo Roberto Albuquerque & Menderson Costa*
+# RSA Implementation
+*Trabalho de Complexidade de Algoritmos 2020-2*
 
 ---
 
